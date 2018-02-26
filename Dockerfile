@@ -60,7 +60,8 @@ RUN C:\ProgramData\chocolatey\bin\choco install vcpython27 -y;
 #
 ENV GAM_VER=4.40
 ENV PYTHONIOENCODING=utf-8
-RUN Invoke-WebRequest -Uri "https://github.com/jay0lee/GAM/archive/v${env:GAM_VER}.zip" -OutFile C:\gam.zip; \
+RUN [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
+    Invoke-WebRequest -Uri "https://github.com/jay0lee/GAM/archive/v${env:GAM_VER}.zip" -OutFile C:\gam.zip; \
     Expand-Archive C:\gam.zip -DestinationPath C:\; Remove-Item -Force C:\gam.zip;
 #   To work around issue https://github.com/MicrosoftDocs/Virtualization-Documentation/issues/497 
 #   The C:\gam folder has to be empty when we mount it.  Therefore, the user must copy gam.py and other contents into this mount.
