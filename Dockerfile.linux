@@ -1,0 +1,40 @@
+FROM phusion/baseimage:0.9.18
+#Had to use Ubuntu 14 based image because Brive hasn't updated it's dependancies in some time.
+# Also, cryptography2 seems to have some issues with Ubuntu16.
+# Need to write drive_backup.sh for linux.  Unfinished.
+
+### Install Brive
+### We are installing from a specific commit - Just so we don't get a surprise update.
+ENV BRIVE_COMMIT c29748ab23677089b1697e0d9e0d7cf45e90a294
+ENV LC_ALL en_US.UTF-8
+RUN apt-get update; \
+    apt-get install -y git wget build-essential locales; \
+    apt-get install -y python python-dev libffi-dev libssl-dev libyaml-dev libpython2.7-dev python-pip; \
+    rm -rf /var/lib/apt; \
+    wget https://bootstrap.pypa.io/ez_setup.py -O - | python; \
+    pip install --upgrade httplib2 streaming_httplib2 pyasn1 cffi six; \
+    #Using an edited copy of original for custom changes not yet merged.
+    git clone -b master https://github.com/BarnumD/Brive.git /brive; \
+    cd /brive; \
+    git reset --hard $BRIVE_COMMIT; \
+    sed -i 's/Brive==0.3.11/Brive==0.4.0/g' setup.py; \
+    python setup.py install -n; \
+    mkdir /config /data; \
+    rm /setuptools*zip
+## Done configuring Brive.
+
+###Install GAM
+RUN apt-get install -y xz-utils;
+RUN curl -s -S -L https://git.io/install-gam > /tmp/gam-install.sh; \
+chmod +x /tmp/gam-install.sh; \
+/tmp/gam-install.sh -l -d /; \
+rm /tmp/gam-install.sh; \
+touch /gam/nobrowser.txt
+
+### Configure Our scripts 
+COPY scripts /scripts
+RUN chmod 750 /scripts/*.sh
+
+CMD ["C:\\scripts\\drive_backup.ps1"]
+
+VOLUME ["/data", "/config" , "/gam"]
