@@ -3,11 +3,17 @@ Param(
   [parameter(Mandatory=$false)][string]$scriptPath = 'C:\scripts',
   [parameter(Mandatory=$false)][int]$maxParallel = 2,
   [parameter(Mandatory=$false)][string]$brivePreferredFormats = 'pptx,docx,xlsx,jpg',
+  [parameter(Mandatory=$false)][bool]$cleanOldFiles = $true,
+  [parameter(Mandatory=$false)][int]$cleanOldFilesDays = 365,
+  [parameter(Mandatory=$false)][int]$cleanOldFilesChance = 100,
   [bool]$logToFile = $true
 )
 #Check for environment variables
 if (Get-ChildItem Env:maxParallel -ErrorAction SilentlyContinue){$maxParallel = (Get-ChildItem Env:maxParallel).value}
 if (Get-ChildItem Env:brivePreferredFormats -ErrorAction SilentlyContinue){$brivePreferredFormats = (Get-ChildItem Env:brivePreferredFormats).value}
+if (Get-ChildItem Env:cleanOldFiles -ErrorAction SilentlyContinue){$cleanOldFiles = (Get-ChildItem Env:cleanOldFiles).value}
+if (Get-ChildItem Env:cleanOldFilesDays -ErrorAction SilentlyContinue){$cleanOldFilesDays = (Get-ChildItem Env:cleanOldFilesDays).value}
+if (Get-ChildItem Env:cleanOldFilesChance -ErrorAction SilentlyContinue){$cleanOldFilesChance = (Get-ChildItem Env:cleanOldFilesChance).value}
 
 ################
 #XXXXXXXXXXXXXXXXXXXXX
@@ -81,6 +87,29 @@ function waitJobs($maxCount){
       Start-Sleep -Seconds 5
     }
   }
+}
+
+
+### System Maintenance
+####################
+#Hack to clean out old files after $cleanOldFilesDays since brive doesn't tell us when files have been removed from google.  So we delete them, and let them re-download.
+if (cleanOldFiles){
+  Start-Job -Name "CleanOldFiles" -ScriptBlock { 
+    $cleanOldFilesDays = $args[0]
+    $cleanOldFilesChance = $args[1]
+
+    $limitDateTime = (Get-Date).AddDays(-$cleanOldFilesDays)
+
+    Get-ChildItem -Path '\\?\C:\data\' -Recurse -Force -File -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -lt $limitDateTime } | ForEach-Object {
+      #Random chance that the file will be removed if older than a certain date.
+      echo $cleanOldFilesChance
+      if ($cleanOldFilesChance -le (get-random -minimum 0 -maximum 100)){
+        Remove-Item -Path $_.FullName -Force
+      }
+    }
+    
+    Get-ChildItem -Path '\\?\C:\data\' -Recurse -Directory| Where-Object { $_.PSIsContainer } | Where-Object { ($_.GetFiles().Count -eq 0) -and ($_.GetDirectories().Count -eq 0) -and $_.LastWriteTime -lt $limitDateTime}
+  } -ArgumentList $cleanOldFilesDays,$cleanOldFilesChance
 }
 
 

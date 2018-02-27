@@ -49,6 +49,9 @@ Navigate to the web pages for each of these packages.  Follow their instructions
 
 `maxParallel` - [int] [`2`] Configure the maximum number of accounts to backup in parrallel.
 `brivePreferredFormats` - [string] [`pptx,docx,xlsx,jpg`] Configure the preferred formats for Brive to convert google docs into.  If you don't it will download them in every available format. File extensions must be comma separated.
+`cleanOldFiles` - [bool] [$true] Remove older files. Hack to remove old files after a certain number of days since Brive doesn't have the concept of removing local copies that no longer exist in google docs.  The file will arbitrarily be deleted.  If it still exists on google, it will be re-downloaded.
+`cleanOldFilesDays` - [int] [365] Number of days after which we will remove older files.
+`cleanOldFilesChance` - [int] [0-100] Percent of time that an older file will be removed.  Instead of removing every older file that is older than `cleanOldFilesDays`.  You may choose to remove some of them, at random.  50 equals 50% chance it any given file will be removed.  100 equals 100% chance.  This will allow for less re-downloading if the file still exists on google.
 
 **Other Notes:**
 *Suggest enabling long file name support on the windows host as google doc folder paths can become quite lengthy.
